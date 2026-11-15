@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'io.github.abd3lraouf.wifirescue'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'io.github.abd3lraouf.wifirescue'
+        minSdk 26
+        // targetSdk 28 ON PURPOSE: from targetSdk 29 (Android 10) WifiManager.setWifiEnabled() is a no-op that
+        // returns false. The last resort of this add-on is switching Wi-Fi off and on, so it must stay at 28.
+        // Sideloaded only (never Play), so Play's target-API rule does not apply.
+        //noinspection ExpiredTargetSdkVersion
+        targetSdk 28
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            // Sideloaded over ADB like the launcher: signed with the debug key.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    lint {
+        // See targetSdk above: the old target is the point of this app.
+        disable 'ExpiredTargetSdkVersion', 'OldTargetApi'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

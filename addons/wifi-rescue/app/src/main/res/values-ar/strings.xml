@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">إنقاذ الواي فاي</string>
+    <string name="channel">مراقبة الواي فاي</string>
+    <string name="notification">يراقب الواي فاي إذا اتصل بدون إنترنت</string>
+    <string name="about">إذا كان التلفزيون متصلاً بالواي فاي بدون إنترنت، يطلب من أندرويد إعادة الفحص، ثم يطفئ الواي فاي ويشغّله. يبدأ تلقائياً مع كل تشغيل.</string>
+    <string name="nothing_yet">لا شيء بعد</string>
+    <string name="status">آخر إجراء: %1$s\nمرات إطفاء الواي فاي وتشغيله: %2$d</string>
+</resources>

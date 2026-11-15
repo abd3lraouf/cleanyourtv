@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wi-Fi Rescue</string>
+    <string name="channel">Wi-Fi watch</string>
+    <string name="notification">Watching Wi-Fi for a connection without internet</string>
+    <string name="about">When the TV is on Wi-Fi but has no internet, this asks Android to check again, then switches Wi-Fi off and on. It starts by itself at every boot.</string>
+    <string name="nothing_yet">Nothing yet</string>
+    <string name="status">Last: %1$s\nWi-Fi switched off and on: %2$d times</string>
+</resources>

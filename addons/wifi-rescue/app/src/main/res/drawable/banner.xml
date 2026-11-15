@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The TV banner: a Wi-Fi fan on a deep green field. Drawn for this add-on. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF0F4D3A" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF17785A" android:pathData="M160,90m-62,0a62,62 0,1 1,124 0a62,62 0,1 1,-124 0" />
+    <group android:translateX="124" android:translateY="54" android:scaleX="3" android:scaleY="3">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M12,21L23.6,6.5C23.15,6.16 18.67,2.5 12,2.5 5.32,2.5 0.85,6.16 0.4,6.5L12,21z" />
+    </group>
+</vector>
