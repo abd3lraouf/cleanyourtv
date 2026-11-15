@@ -923,7 +923,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         // Keep focus on the top bar at its ends and at the top: Android's focus finder would otherwise
         // jump to a tile far below when there is nothing in that direction.
-        boolean rtlMenuBar = getResources().getBoolean(R.bool.rtl_menu_bar);
         View.OnKeyListener pillKeys = (v, keyCode, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return true;
@@ -932,11 +931,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
                 return true;
             }
-            int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
-            int leftButton = rtlMenuBar ? R.id.btnSettings : firstButton;
-            int rightButton = rtlMenuBar ? firstButton : R.id.btnSettings;
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
-            return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
+            if (keyCode != KeyEvent.KEYCODE_DPAD_LEFT && keyCode != KeyEvent.KEYCODE_DPAD_RIGHT) return false;
+            // Ask the focus finder where Left/Right would land and stop only when that leaves the bar. Judging the
+            // ends by id (rtl_menu_bar) broke in Arabic: supportsRtl mirrors the bar while rtl_menu_bar stays off,
+            // so Left on the Inputs pill was swallowed and Wi-Fi and Settings could never take focus.
+            View next = v.focusSearch(keyCode == KeyEvent.KEYCODE_DPAD_LEFT ? View.FOCUS_LEFT : View.FOCUS_RIGHT);
+            return next == null || !isInTopBar(next);
         };
         btnInputs.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
@@ -2511,17 +2511,23 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
                     rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
         }
+        // Up/Down keep the column focus started in: Down into a short last row lands on its last app, and Up from
+        // there goes back to the starting column instead of the last app's.
+        int column = navColumn(position);
+        int rowStart = position - position % COLUMNS;
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
             if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
-            target = position - COLUMNS;
+            target = rowStart - COLUMNS + column;
         } else {
             int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
             if (position >= lastRowStart) {
                 if (adapter.isLibraryAt(count)) focusLibrary();
                 return true;
             }
-            target = Math.min(position + COLUMNS, count - 1);
+            target = Math.min(rowStart + COLUMNS + column, count - 1);
         }
+        stickyPosition = adapter.focusablePosition(target);
+        stickyColumn = column;
         focusTile(target);
         // The default focus search clicks for Left/Right; Up/Down are handled here, so click for them too.
         grid.playSoundEffect(keyCode == KeyEvent.KEYCODE_DPAD_UP
@@ -2621,6 +2627,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return findViewById(R.id.btnSettings);
     }
 
+    /** Whether a view sits in the top bar (its pills and top_bar_apps buttons). */
+    private boolean isInTopBar(View view) {
+        View bar = findViewById(R.id.topButtons);
+        for (View v = view; v != null; v = v.getParent() instanceof View ? (View) v.getParent() : null)
+            if (v == bar) return true;
+        return false;
+    }
+
     /** top_bar_apps buttons, in bar order. */
     private final List<View> topAppButtons = new ArrayList<>();
 
@@ -2671,7 +2685,19 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override public void onLibraryUp() {
         if (adapter.appCount() == 0) { firstTopButton().requestFocus(); return; }
         int lastRow = ((adapter.appCount() - 1) / COLUMNS) * COLUMNS;
-        focusTile(Math.min(lastRow + lastFocused % COLUMNS, adapter.appCount() - 1));
+        int column = navColumn(lastFocused);
+        int target = Math.min(lastRow + column, adapter.appCount() - 1);
+        stickyPosition = adapter.focusablePosition(target);
+        stickyColumn = column;
+        focusTile(target);
+    }
+
+    /** The tile an Up/Down move last landed on, and the column that move was aiming for. */
+    private int stickyPosition = -1, stickyColumn;
+
+    /** The column an Up/Down move from this tile aims for: the one the vertical walk started in, if it got here. */
+    private int navColumn(int position) {
+        return position == stickyPosition ? stickyColumn : position % COLUMNS;
     }
 
     private void focusLibrary() {
