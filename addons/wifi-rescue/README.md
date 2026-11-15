@@ -11,6 +11,15 @@ off for minutes. This add-on watches the Wi-Fi network from boot:
 
 It never changes DNS or any other setting. `targetSdk` is 28 on purpose: newer targets can't switch Wi-Fi.
 
+## Permissions
+
+| Permission | Why |
+|---|---|
+| `ACCESS_NETWORK_STATE`, `INTERNET` | Reads whether the Wi-Fi network has internet and asks Android to check it again. Nothing is sent anywhere. |
+| `ACCESS_WIFI_STATE`, `CHANGE_WIFI_STATE` | Switches Wi-Fi off and on when the check keeps failing. |
+| `RECEIVE_BOOT_COMPLETED` | Starts the watcher at boot, when the problem happens. |
+| `FOREGROUND_SERVICE` | The watcher runs as a small foreground service so Android keeps it alive. |
+
 ## Install
 
 ```bash
