@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The TV banner: a crescent over a dome on a deep green field. Drawn for this add-on. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF0F4D3A" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF17785A" android:pathData="M160,90m-62,0a62,62 0,1 1,124 0a62,62 0,1 1,-124 0" />
+    <group android:translateX="124" android:translateY="54" android:scaleX="3" android:scaleY="3">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M4,22V16C4,11.6 7.6,9 12,9C16.4,9 20,11.6 20,16V22Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M12,1.5A2.5,2.5 0,1 0,12 6.5A3.5,3.5 0,0 1,12 1.5Z" />
+    </group>
+</vector>

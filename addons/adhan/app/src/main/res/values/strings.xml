@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Adhan</string>
+    <string name="about">At each of the five prayer times from Prayer Times, while the TV is on, this shows the prayer and plays the adhan. Other players pause and resume after it.</string>
+    <string name="fajr">Fajr</string>
+    <string name="sunrise">Sunrise</string>
+    <string name="dhuhr">Dhuhr</string>
+    <string name="asr">Asr</string>
+    <string name="maghrib">Maghrib</string>
+    <string name="isha">Isha</string>
+    <string name="next">Next adhan: %1$s at %2$s</string>
+    <string name="no_times">No prayer times yet. Open Prayer Times once so it fetches them.</string>
+    <string name="kept_times">Using the last times kept; Prayer Times has none for today yet.</string>
+    <string name="no_overlay">Not allowed to show over other apps: the notice comes as a notification.</string>
+    <string name="sound">Play the adhan</string>
+    <string name="prayers">Prayers</string>
+    <string name="volume">Volume: %1$d%%</string>
+    <string name="test">Try it now</string>
+    <string name="notice_title">It is time for the adhan</string>
+    <string name="notice_time_place">%1$s · %2$s</string>
+    <string name="notice_hint">OK or Back to close</string>
+    <string name="channel_alert">Prayer time</string>
+    <string name="channel_playing">Adhan playing</string>
+    <string name="playing">Adhan: %1$s</string>
+    <string name="stop">Stop</string>
+</resources>

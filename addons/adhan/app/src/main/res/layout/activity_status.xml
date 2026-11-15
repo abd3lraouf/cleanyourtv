@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="620dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@drawable/panel"
+    android:orientation="vertical"
+    android:padding="28dp">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textColor="#FFFFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/about"
+        android:textColor="#CCFFFFFF"
+        android:textSize="15sp" />
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+    <CheckBox
+        android:id="@+id/sound"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/row"
+        android:paddingVertical="6dp"
+        android:text="@string/sound"
+        android:textColor="#FFFFFFFF"
+        android:textSize="16sp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/prayers"
+        android:textColor="#99FFFFFF"
+        android:textSize="14sp" />
+    <LinearLayout
+        android:id="@+id/prayers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" />
+    <TextView
+        android:id="@+id/volume_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="#99FFFFFF"
+        android:textSize="14sp" />
+    <SeekBar
+        android:id="@+id/volume"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/row"
+        android:paddingVertical="12dp" />
+    <Button
+        android:id="@+id/test"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/test" />
+</LinearLayout>

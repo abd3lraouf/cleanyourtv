@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">الأذان</string>
+    <string name="about">عند كل صلاة من الصلوات الخمس حسب تطبيق مواقيت الصلاة، وإذا كان التلفزيون يعمل، يعرض اسم الصلاة ويرفع الأذان. تتوقف المشغلات الأخرى مؤقتاً ثم تكمل بعده.</string>
+    <string name="fajr">الفجر</string>
+    <string name="sunrise">الشروق</string>
+    <string name="dhuhr">الظهر</string>
+    <string name="asr">العصر</string>
+    <string name="maghrib">المغرب</string>
+    <string name="isha">العشاء</string>
+    <string name="next">الأذان القادم: %1$s الساعة %2$s</string>
+    <string name="no_times">لا توجد مواقيت بعد. افتح تطبيق مواقيت الصلاة مرة ليجلبها.</string>
+    <string name="kept_times">تُستخدم آخر مواقيت محفوظة؛ لم تصل مواقيت اليوم بعد.</string>
+    <string name="no_overlay">غير مسموح بالظهور فوق التطبيقات الأخرى: سيظهر التنبيه كإشعار.</string>
+    <string name="sound">تشغيل صوت الأذان</string>
+    <string name="prayers">الصلوات</string>
+    <string name="volume">مستوى الصوت: %1$d%%</string>
+    <string name="test">تجربة الآن</string>
+    <string name="notice_title">حان الآن موعد الأذان</string>
+    <string name="notice_time_place">%1$s · %2$s</string>
+    <string name="notice_hint">اضغط موافق أو رجوع للإغلاق</string>
+    <string name="channel_alert">موعد الصلاة</string>
+    <string name="channel_playing">الأذان يعمل</string>
+    <string name="playing">الأذان: %1$s</string>
+    <string name="stop">إيقاف</string>
+</resources>
