@@ -12,7 +12,8 @@
    - `bools.xml`: `date_single_line` false when the language's weekday and month names do not fit on one
      line (`values-de`, `values-es`, `values-b+es+419`, `values-ast`, `values-pt`, `values-ru` and
      `values-uk` set it), and `rtl_app_grid`/`rtl_menu_bar` true for a right-to-left language
-     (`values-iw`).
+     (`values-iw`); `values-ar` sets `rtl_app_grid` true and `rtl_menu_bar` false, because Arabic mirrors
+     the whole layout instead.
    - `fonts.xml`: point `font_body`, `font_regular` and the other `font_*` at the system families when the
      bundled Outfit has no glyphs for the language's letters (`values-vi`, #833).
    - `lunar.xml`: the lunar date format, the leap-month wording and the stem and branch names, for a

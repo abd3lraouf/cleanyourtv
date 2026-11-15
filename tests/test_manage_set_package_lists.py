@@ -208,8 +208,9 @@ class BannerNameRuleTest(unittest.TestCase):
                          "a name that bundledBanner() would refuse is in the list")
         self.assertEqual(sorted(names), names, "the refusal prints them in a stable order")
         # Read out of res/ rather than a list in manage.py: the folder the drawable sits in proves it.
-        shipped = sorted(p.stem for p in LAUNCHER_RES.rglob("banner_*")
-                         if p.is_file() and p.suffix.lower() in manage.BANNER_SUFFIXES)
+        # A banner can sit in more than one folder (drawable-nodpi and a locale's drawable-ar-nodpi): one name.
+        shipped = sorted({p.stem for p in LAUNCHER_RES.rglob("banner_*")
+                          if p.is_file() and p.suffix.lower() in manage.BANNER_SUFFIXES})
         self.assertEqual(shipped, names)
 
     def test_a_theme_folder_with_no_launcher_beside_it_has_no_names(self):
