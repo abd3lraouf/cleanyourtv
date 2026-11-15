@@ -83,6 +83,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -214,6 +215,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** config.xml inputs_cec_state_only: only CEC device rows show a connection state, bare HDMI ports none. */
     private boolean inputsCecStateOnly;
     private boolean shamsi;
+    /** config.json hijri_date: the Shamsi line shows the Umm al-Qura Hijri date. */
+    private boolean hijri;
+    /** config.json prayer_panel; null when it is off. */
+    private PrayerPanel prayerPanel;
     /** greeting_name: said after the greeting, which is shown in capitals. */
     private String greetingName = "";
     /** Optional time-of-day backdrop (config.xml, sky_intensity); 0 keeps it hidden. */
@@ -590,7 +595,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         showStats = cfg.showStats;
         inputsConnectedOnly = cfg.inputsConnectedOnly;
         inputsCecStateOnly = cfg.inputsCecStateOnly;
-        shamsi = cfg.shamsiDate;
+        shamsi = cfg.shamsiDate || cfg.hijriDate;
+        hijri = cfg.hijriDate;
+        if (cfg.prayerPanel) {
+            prayerPanel = new PrayerPanel(this, root, ((TextView) findViewById(R.id.clock)).getTypeface(), handler);
+        }
         lunarDate = findViewById(R.id.lunarDate);
         lunar = cfg.lunarDate;
         lunarOffset = Lunar.offsetFor(cfg.lunarUtcOffset, Locale.getDefault());
@@ -780,6 +789,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     racePanel.setTranslationY(-shift);
                     int room = Math.max(1, racePanel.getTop() - clockBlock.getBottom());
                     racePanel.setAlpha(Math.max(0f, 1f - shift / (float) room));
+                }
+            });
+        }
+
+        // prayer_panel: rides up with the cards like game_day's panel, fading out over its first 80dp.
+        if (prayerPanel != null) {
+            grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                    int shift = rv.canScrollVertically(-1) ? rv.computeVerticalScrollOffset() : 0;
+                    View box = prayerPanel.box;
+                    box.setTranslationY(-shift * 0.4f);
+                    float alpha = Math.max(0f, 1f - shift / (float) prayerPanel.px(80f));
+                    box.setAlpha(alpha);
+                    box.setVisibility(alpha == 0f || prayerPanel.keys.length == 0 ? View.INVISIBLE : View.VISIBLE);
                 }
             });
         }
@@ -1091,6 +1115,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        if (prayerPanel != null) {
+            if (!prayerPanel.watching) {
+                try {
+                    getContentResolver().registerContentObserver(PrayerPanel.URI, false, prayerPanel.observer);
+                    prayerPanel.watching = true;
+                } catch (SecurityException ignored) {
+                    // the Prayer Times app is missing or does not share its times
+                }
+            }
+            prayerPanel.load();
+            prayerPanel.render();
+        }
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -1307,6 +1343,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onPause() {
         super.onPause();
         resumed = false;
+        if (prayerPanel != null && prayerPanel.watching) {
+            getContentResolver().unregisterContentObserver(prayerPanel.observer);
+            prayerPanel.watching = false;
+        }
         // No UP reaches a paused Home, so a vendor-key hold it saw go down would still open its app later.
         // Only Home's own share is dropped: a key service that saw the same DOWN keeps its hold.
         RemoteKeys.release(this);
@@ -2783,8 +2823,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     : getString(R.string.greeting_with_name, getString(res), greetingName));
             greeting.setTextColor(greetingColor);
         }
-        if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));
+        if (shamsi) shamsiDate.setText(hijri ? hijriToday() : Shamsi.today(getResources()));
+        if (prayerPanel != null) prayerPanel.render();
         if (lunar) lunarDate.setText(Lunar.today(getResources(), lunarOffset));
+    }
+
+    /** Today in the Umm al-Qura Hijri calendar, long form, in the TV's language. */
+    private String hijriToday() {
+        android.icu.util.ULocale locale = android.icu.util.ULocale.forLocale(getResources().getConfiguration().getLocales().get(0))
+                .setKeywordValue("calendar", "islamic-umalqura");
+        android.icu.util.IslamicCalendar cal = new android.icu.util.IslamicCalendar(locale);
+        cal.setCalculationType(android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA);
+        return android.icu.text.DateFormat.getDateInstance(cal, android.icu.text.DateFormat.LONG, locale).format(new Date());
     }
 
     // ---- race-weekend panel (a theme's race_calendar) -----------------------------------------------

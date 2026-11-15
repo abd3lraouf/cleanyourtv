@@ -17,6 +17,10 @@ import java.util.Set;
 final class WallpaperMood {
     static final String MORNING = "morning", EVENING = "evening", NIGHT = "night";
     static final String[] ALL = {MORNING, EVENING, NIGHT};
+    /** Groups named after the day's prayers, used instead of the three above when the theme has a "fajr" group. */
+    static final String[] PRAYER_GROUPS = {"fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"};
+    /** Today's six prayer times in minutes of the day, from the prayer panel; null without them. */
+    static volatile int[] prayerMinutes;
     /** Sunrise and sunset in minutes of the day, without a place (or where the sun does not rise or set that day). */
     static final int DEFAULT_SUNRISE = 7 * 60, DEFAULT_SUNSET = 18 * 60 + 30;
     private static final int NOON = 12 * 60;
@@ -31,6 +35,19 @@ final class WallpaperMood {
         if (minute >= sunrise && minute < NOON) return MORNING;
         if (minute >= NOON && minute < sunset + DUSK_MINUTES) return EVENING;
         return NIGHT;
+    }
+
+    /**
+     * The group for this minute: the prayer whose time last passed (Isha before Fajr) when the groups have "fajr"
+     * and today's prayer times are known, otherwise {@link #timeOfDay}.
+     */
+    static String pick(int minute, int sunrise, int sunset, Map<String, Set<String>> groups) {
+        int[] p = prayerMinutes;
+        if (p != null && p.length == 6 && groups.containsKey("fajr")) {
+            if (minute < p[0]) return "isha";
+            for (int i = 5; i >= 0; i--) if (minute >= p[i]) return PRAYER_GROUPS[i];
+        }
+        return timeOfDay(minute, sunrise, sunset);
     }
 
     /** That day's {sunrise, sunset} at config.xml's latitude and longitude; the defaults when either is unusable. */

@@ -25,6 +25,8 @@
     <!-- Android 11+ package visibility: lets the launcher list the TV apps it shows as tiles, and the
          apps that declare a module card (docs/specs/card.md). -->
     <queries>
+        <!-- prayer_panel reads today's times from the Prayer Times TV app. -->
+        <package android:name="com.majnioui.tv.prayer" />
         <!-- The standard settings handlers, so package visibility doesn't hide them and send the pills to a vendor fallback by mistake. -->
         <intent>
             <action android:name="android.settings.SETTINGS" />
@@ -71,6 +73,7 @@
     </queries>
 
     <application
+        android:supportsRtl="true"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/banner"

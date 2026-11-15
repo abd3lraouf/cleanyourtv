@@ -187,7 +187,7 @@
                      right edge of these full-width lines instead of staying under the clock. -->
                 <TextView
                     android:id="@+id/greeting"
-                    android:gravity="left"
+                    android:gravity="start"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:singleLine="true"
@@ -254,7 +254,7 @@
                         <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
                         <TextView
                             android:id="@+id/shamsiDate"
-                            android:gravity="left"
+                            android:gravity="start"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:singleLine="true"
@@ -268,7 +268,7 @@
 
                         <TextClock
                             android:id="@+id/date"
-                            android:gravity="left"
+                            android:gravity="start"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:singleLine="@bool/date_single_line"
@@ -286,7 +286,7 @@
                         <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
                         <TextView
                             android:id="@+id/lunarDate"
-                            android:gravity="left"
+                            android:gravity="start"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -310,7 +310,7 @@
                 android:layout_width="wrap_content"
                 android:layout_below="@id/leftBlock"
                 android:layout_alignStart="@id/leftBlock"
-                android:gravity="left"
+                android:gravity="start"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:singleLine="true"
@@ -408,6 +408,7 @@
     <!-- The single floating glass highlight that springs between tiles. -->
     <com.gathin.tvhome.GlassView
         android:id="@+id/glass"
+        android:layout_gravity="left|top"
         android:layout_width="10dp"
         android:layout_height="10dp"
         android:alpha="0"

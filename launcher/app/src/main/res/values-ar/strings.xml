@@ -101,4 +101,10 @@
     <string name="clock_format_system">النظام</string>
     <string name="clock_format_12">12 ساعة</string>
     <string name="clock_format_24">24 ساعة</string>
+    <string name="prayer_panel_h">%1$d س</string>
+    <string name="prayer_panel_hm">%1$d س %2$d د</string>
+    <string name="prayer_panel_in">بعد %1$s</string>
+    <string name="prayer_panel_m">%1$d دقيقة</string>
+    <string name="prayer_panel_title">مواقيت الصلاة · %1$s</string>
+    <string name="prayer_panel_tomorrow">غدًا</string>
 </resources>

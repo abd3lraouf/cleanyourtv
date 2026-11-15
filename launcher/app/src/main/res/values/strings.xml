@@ -158,4 +158,10 @@
     <string name="clock_format_system">System</string>
     <string name="clock_format_12">12-hour</string>
     <string name="clock_format_24">24-hour</string>
+    <string name="prayer_panel_h">%1$d h</string>
+    <string name="prayer_panel_hm">%1$dh %2$dm</string>
+    <string name="prayer_panel_in">in %1$s</string>
+    <string name="prayer_panel_m">%1$d min</string>
+    <string name="prayer_panel_title">Prayer times · %1$s</string>
+    <string name="prayer_panel_tomorrow">Tomorrow</string>
 </resources>

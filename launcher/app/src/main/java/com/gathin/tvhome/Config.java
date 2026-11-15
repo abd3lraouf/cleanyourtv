@@ -90,6 +90,10 @@ final class Config {
     final boolean advancedEffects;
     final int rowsBelowDock;
     final boolean shamsiDate;
+    /** config.json hijri_date: the Shamsi line shows the Islamic (Umm al-Qura) date instead. */
+    boolean hijriDate;
+    /** config.json prayer_panel: today's prayer times from the Prayer Times TV app, top-right. */
+    boolean prayerPanel;
     /** Lunisolar date under the date (config.json lunar_date), computed for lunarUtcOffset hours east of UTC (-1: by locale). */
     final boolean lunarDate;
     final int lunarUtcOffset;
@@ -717,7 +721,7 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(festivalName(json),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
-        return new Config(dock, fillDock, hidden, libraryApps, libraryExcludedApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
+        Config config = new Config(dock, fillDock, hidden, libraryApps, libraryExcludedApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService, panelAction, panelExtra, coocaaSources, inputAction, inputSources, inputUriScheme, Math.max(1, columns),
                 Math.max(0, rowsBelow), animations, advancedEffects, shamsi, greetingName, moduleCards, reducedMotion, bootToLiveTv,
                 openOnStartChoice, dockTitle, dockRow, topMenu, launcherSettingsButton, reorderButton, showNetworkPill, showInputsPill,
@@ -733,6 +737,10 @@ final class Config {
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, inputsCecStateOnly,
                 Math.max(0, Math.min(600, openOnStartNetworkWait)), openOnStartOnWake, iconOnlyVpn, clockFormat, backOpensClock, glowSnap,
                 settingsKeyClearTask);
+        // Theme-only switches (config.json): the Hijri (Umm al-Qura) date in the Shamsi line, and the prayer panel.
+        config.hijriDate = json != null && bool(json, "hijri_date", false);
+        config.prayerPanel = json != null && bool(json, "prayer_panel", false);
+        return config;
     }
 
     /**
@@ -859,7 +867,9 @@ final class Config {
     /** {"night": ["03-moon-lake.jpg", ...], ...}: each mood's picture names; other keys and names are left out. */
     private static Map<String, Set<String>> moods(JSONObject o) {
         Map<String, Set<String>> groups = new HashMap<>();
-        for (String mood : WallpaperMood.ALL) {
+        List<String> all = new ArrayList<>(Arrays.asList(WallpaperMood.ALL));
+        all.addAll(Arrays.asList(WallpaperMood.PRAYER_GROUPS));
+        for (String mood : all) {
             JSONArray names = o.optJSONArray(mood);
             if (names == null) continue;
             Set<String> group = new HashSet<>();
