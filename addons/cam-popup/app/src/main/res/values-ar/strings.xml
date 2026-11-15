@@ -18,4 +18,8 @@
     <string name="seconds">%1$d ث</string>
     <string name="minutes">%1$d د</string>
     <string name="cameras">الكاميرات المسموح لها بالظهور</string>
+    <string name="live_name">الكاميرات</string>
+    <string name="live_hint_grid">موافق: ملء الشاشة  ·  القائمة: الإعدادات</string>
+    <string name="live_hint_full">◀ ▶ الكاميرات الأخرى  ·  رجوع: كل الكاميرات</string>
+    <string name="live_hint_single">رجوع: خروج  ·  القائمة: الإعدادات</string>
 </resources>

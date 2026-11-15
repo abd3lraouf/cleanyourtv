@@ -41,12 +41,13 @@ public class SettingsTest {
 
     @Test public void provisioningText() {
         Map<String, String> m = Settings.parseProvision(
-                "host=192.0.2.50\r\nuser= viewer \npassword= a=b c \nbogus=1\nno equals\nchannels=1-4\n");
+                "host=192.0.2.50\r\nuser= viewer \npassword= a=b c \nbogus=1\nno equals\nchannels=1-4\nview=2,4\n");
         assertEquals("192.0.2.50", m.get("host"));
         assertEquals("viewer", m.get("user"));
         assertEquals(" a=b c ", m.get("password"));
         assertEquals("1-4", m.get("channels"));
+        assertEquals("2,4", m.get("view"));
         assertFalse(m.containsKey("bogus"));
-        assertEquals(4, m.size());
+        assertEquals(5, m.size());
     }
 }

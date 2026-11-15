@@ -27,6 +27,7 @@ final class Settings {
     static final String COOLDOWN = "cooldown_s";
     static final String HOLD = "hold_s";
     static final String STREAM = "stream";
+    static final String VIEW = "view";
 
     static final int[] COOLDOWN_STEPS = {0, 60, 120, 300, 600, 1800};
     static final int DEFAULT_COOLDOWN = 120;
@@ -42,6 +43,8 @@ final class Settings {
     final int cooldownSeconds;
     final int holdSeconds;
     final String stream;
+    /** The cameras the live view shows, in order. */
+    final TreeSet<Integer> view;
 
     private Settings(SharedPreferences p) {
         host = p.getString(HOST, "");
@@ -52,6 +55,7 @@ final class Settings {
         cooldownSeconds = p.getInt(COOLDOWN, DEFAULT_COOLDOWN);
         holdSeconds = p.getInt(HOLD, DEFAULT_HOLD);
         stream = p.getString(STREAM, "s1");
+        view = parseChannels(p.getString(VIEW, "1-4"));
     }
 
     static SharedPreferences prefs(Context c) {
@@ -72,6 +76,11 @@ final class Settings {
 
     String rtspUrl(int channel) {
         return rtspUrl(host, user, password, channel, stream);
+    }
+
+    /** {@code main} picks the full-resolution stream, for a camera shown full screen. */
+    String rtspUrl(int channel, boolean main) {
+        return rtspUrl(host, user, password, channel, main ? "s0" : "s1");
     }
 
     // --- pure helpers -----------------------------------------------------------------------------------------
@@ -161,7 +170,7 @@ final class Settings {
             String key = line.substring(0, eq).trim().toLowerCase(Locale.ROOT);
             String value = line.substring(eq + 1);
             switch (key) {
-                case HOST: case USER: case STREAM: case CHANNELS:
+                case HOST: case USER: case STREAM: case CHANNELS: case VIEW:
                     out.put(key, value.trim());
                     break;
                 case PASSWORD:
@@ -188,7 +197,7 @@ final class Settings {
                 switch (k) {
                     case ENABLED: e.putBoolean(k, s.equals("1") || s.equalsIgnoreCase("true")); break;
                     case COOLDOWN: case HOLD: e.putInt(k, Math.max(0, Integer.parseInt(s))); break;
-                    case CHANNELS: e.putString(k, formatChannels(parseChannels(s))); break;
+                    case CHANNELS: case VIEW: e.putString(k, formatChannels(parseChannels(s))); break;
                     case STREAM: if (!s.equals("s0") && !s.equals("s1")) continue; e.putString(k, s); break;
                     default: e.putString(k, s); break;
                 }

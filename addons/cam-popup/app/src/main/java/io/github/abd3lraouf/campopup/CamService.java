@@ -137,6 +137,10 @@ public final class CamService extends Service {
         switch (action) {
             case SHOW:
             case SWITCH:
+                if (LiveActivity.onScreen && overrideUrl == null) {   // the cameras are already full screen
+                    policy.closed(SystemClock.elapsedRealtime());
+                    return;
+                }
                 String url = overrideUrl != null ? overrideUrl : settings.rtspUrl(channel);
                 if (!popup.show(channel, url)) {
                     policy.closed(SystemClock.elapsedRealtime());

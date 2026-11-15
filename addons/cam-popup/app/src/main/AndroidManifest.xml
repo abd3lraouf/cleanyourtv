@@ -25,17 +25,25 @@
         android:theme="@style/Panel"
         tools:ignore="DataExtractionRules">
 
+        <!-- The Home tile opens the cameras live; Menu there opens the settings. -->
         <activity
-            android:name=".StatusActivity"
+            android:name=".LiveActivity"
+            android:label="@string/live_name"
             android:exported="true"
             android:launchMode="singleTask"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:theme="@style/Live">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".StatusActivity"
+            android:exported="true"
+            android:screenOrientation="landscape" />
 
         <service
             android:name=".CamService"

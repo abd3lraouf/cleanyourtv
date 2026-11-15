@@ -2,7 +2,8 @@
 
 When a camera on the home recorder (DVR/NVR) sees motion, its picture opens in a small window in the bottom
 corner of the TV, over whatever is playing, and closes by itself 30 seconds after the motion stops. The window
-never takes focus: the remote keeps driving the app on screen.
+never takes focus: the remote keeps driving the app on screen. Its Home tile, **Cameras**, opens every camera
+live, full screen.
 
 - **Motion:** ONVIF events. The add-on opens one pull-point subscription (`CreatePullPointSubscription`) on
   `http://<recorder>/onvif/event`, then long-polls `PullMessages` (20 s), so an idle recorder costs one small
@@ -11,6 +12,13 @@ never takes focus: the remote keeps driving the app on screen.
   the recorder's own clock. A refused login waits 10 minutes, so a wrong password cannot lock the account.
 - **Video:** the channel's RTSP sub-stream, `rtsp://<recorder>:554/unicast/c<N>/s1/live` (Uniview XVR/NVR),
   through Media3's RTSP client over TCP, muted, in a 480x270 overlay (a quarter of the screen width).
+- **Live view:** the cameras listed in `view=` (1-4 by default) in a grid of sub-streams (one camera fills the
+  screen, two sit side by side, up to four make 2x2). OK opens the focused camera full screen on its main stream
+  (`s0`), left/right steps through the others, Back returns to the grid, Menu opens the settings. Streams retry
+  until they play, and no pop-up opens while the live view is on screen.
+- **H.265:** Uniview recorders describe an H.265 stream with H.264's `sprop-parameter-sets` and no VPS, which
+  Media3 refuses (`missing sprop-vps parameter`). `SdpFix` rewrites the SDP on the RTSP socket into
+  `sprop-vps`/`sprop-sps`/`sprop-pps`, building the VPS from the SPS's profile and level.
 - **Quiet:** pop-ups on/off, a cooldown per camera after its window closes (none to 30 min, 2 min by default),
   and which cameras may pop up, all on the app's screen. Motion on a second camera switches the window only when
   the first one has gone quiet.
@@ -21,7 +29,7 @@ Tried on a Sony BRAVIA (Android TV 11) with a Uniview XVR301-08Q3.
 
 ```bash
 ADB="adb -s <tv ip>:5555" ./install.sh
-ADB="adb -s <tv ip>:5555" ./provision.sh <recorder ip> <login file> [channels=1-4] [cooldown_s=300]
+ADB="adb -s <tv ip>:5555" ./provision.sh <recorder ip> <login file> [channels=1-4] [view=2,4] [cooldown_s=300]
 ```
 
 The login file is two lines, user name then password. Keep it outside the repo; a viewer-only account on the
