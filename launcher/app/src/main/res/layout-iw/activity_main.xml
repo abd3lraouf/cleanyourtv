@@ -349,6 +349,14 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/btnKids"
+                    style="@style/TopButtonIcon"
+                    android:visibility="gone"
+                    android:contentDescription="@string/kids_mode"
+                    android:drawableStart="@drawable/ic_lock"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
                     android:text="@string/settings"
@@ -393,6 +401,14 @@
                     style="@style/TopButton"
                     android:text="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
+                    android:id="@+id/btnQuran"
+                    style="@style/TopButton"
+                    android:visibility="gone"
+                    android:singleLine="true"
+                    android:text="@string/quran"
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>
         </RelativeLayout>

@@ -63,6 +63,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         void onLibraryUp();
         /** A tile whose launch_actions entry is "input:<id>": switch to that TV input instead of opening an app. */
         void onOpenInput(String inputId);
+        /** A tile is about to open {@code pkg}; false stops it (kids mode). */
+        default boolean onTileLaunch(String pkg) { return true; }
     }
 
     static final class Entry {
@@ -202,10 +204,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final Set<String> libraryPreload;
     private final boolean animations;
     private final boolean advancedEffects;
-    private final boolean showLibrary;
+    private boolean showLibrary;
+    /** Kids mode: only these packages are tiles, with no library or Default-home tile; null when off. */
+    private Set<String> kidsApps;
     /** Packages with a leanback entry at the last reload(): their tiles launch with the leanback category. */
     private Set<String> leanbackPackages = new HashSet<>();
-    private final boolean showHomeSettings;
+    private boolean showHomeSettings;
     /** Calmer motion for weak GPUs (config.xml, reduced_motion): no overshoot, shorter fades. */
     private final boolean reducedMotion;
     /** The focus zoom may overshoot (config.xml, focus_overshoot). */
@@ -253,6 +257,15 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         setHasStableIds(true);
     }
 
+    /** Kids mode: from the next reload() only {@code apps} are tiles; null shows the normal Home. */
+    void setKidsApps(Set<String> apps) {
+        kidsApps = apps == null ? null : new HashSet<>(apps);
+        if (kidsApps != null) {
+            showLibrary = false;
+            showHomeSettings = false;
+        }
+    }
+
     /**
      * Rebuilds the tiles. A shown module card stands in for every tile of its package (same component,
      * so focus follows it); hidden_apps wins over a card, and a card's package in dock_apps takes that slot.
@@ -286,8 +299,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         for (ResolveInfo ri : found) {
             if (ri.activityInfo == null) continue;
             String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(ctx.getPackageName()) || !ri.activityInfo.exported
-                    || !LibraryApps.visible(tvPackages.contains(pkg), hidden.contains(pkg), added.contains(pkg), removed.contains(pkg))) continue;
+            if (pkg.equals(ctx.getPackageName()) || !ri.activityInfo.exported) continue;
+            if (kidsApps != null ? !kidsApps.contains(pkg) : !LibraryApps.visible(tvPackages.contains(pkg), hidden.contains(pkg), added.contains(pkg), removed.contains(pkg))) continue;
             ComponentName component = new ComponentName(pkg, ri.activityInfo.name);
             Cards.Card card = cardByPkg.get(pkg);
             if (card != null && !card.component.equals(component)) continue;   // the card stands in for this tile
@@ -534,6 +547,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return;
         }
+        if (!listener.onTileLaunch(e.pkg)) return;
         Intent i = new Intent(Intent.ACTION_MAIN)
                 .setComponent(e.component)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);

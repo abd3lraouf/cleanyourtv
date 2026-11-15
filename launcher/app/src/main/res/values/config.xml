@@ -31,8 +31,6 @@
     <string-array name="hidden_apps">
         <item>com.android.tv</item>
         <item>com.realtek.tv.atv</item>
-        <!-- addons/wifi-rescue runs in the background; its status page stays in the App library. -->
-        <item>io.github.abd3lraouf.wifirescue</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
@@ -374,6 +372,13 @@
          They leave the grid. Missing apps are skipped. Can also be set with "top_bar_apps" in a theme. -->
     <string-array name="top_bar_apps" translatable="false">
     </string-array>
+    <!-- A Quran pill at the start of the top bar for this package (Quran Reader TV, com.prayerhome.quran): when
+         Quran was the last app opened from Home, OK pauses or resumes its recitation with a media key without
+         leaving Home; otherwise it opens the app. Empty, or the app not installed, leaves the pill out. -->
+    <string name="quran_tile_package" translatable="false">com.prayerhome.quran</string>
+    <!-- Kids mode: adds its row to Launcher settings (allowed apps, a parent PIN, a daily limit). The mode itself
+         stays off until a parent turns it on there; false takes the row away and keeps the mode off. -->
+    <bool name="kids_mode">true</bool>
     <!-- The Inputs pill in the top bar, shown when the TV has inputs to list. false hides it for good; what the
          remote's Input button does is unchanged. Can also be set with "show_inputs_pill" in a theme. -->
     <bool name="show_inputs_pill">true</bool>

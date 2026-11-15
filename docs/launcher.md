@@ -63,6 +63,7 @@ The launcher's own page has these rows, top to bottom:
   transitions; they may use more memory) once animations are on.
 - **Open on start**, only with `open_on_start_choice`: Off, or an app that opens instead of Home the first
   time Home comes up after the TV starts. Once per boot, so Home and Back still reach the launcher.
+- **Kids mode**, with `kids_mode`: its PIN, allowed apps and daily limit, see [Kids mode](#kids-mode).
 - **Follow theme (reset on-TV choices)**, which clears every choice above. Pushing or resetting a theme
   clears them too.
 - **Choose default home** opens Android's home picker, and **TV system settings** the TV's own settings
@@ -73,6 +74,28 @@ The launcher's own page has these rows, top to bottom:
 CleanYourTV as Home, or CleanYourTV to return. The original launcher must be enabled; if the install
 script disabled it, run the [restore script](../README.md#restoring-your-tv) first. Some TVs provide no
 home picker.
+
+## Kids mode
+
+With `kids_mode` (on by default), Launcher settings has a **Kids mode** row. The mode stays off until a
+parent turns it on there:
+
+1. **Change PIN** sets a parent PIN of 4 to 8 digits.
+2. **Allowed apps** picks the apps a child may open.
+3. **Daily limit**: no limit, 30, 60, 90 or 120 minutes.
+4. **Turn on kids mode**.
+
+While it is on, Home shows only the allowed apps; the top-bar pills, the app library, Settings and the
+tile menu ask for the PIN first. Time counts only while the screen is on, with no background service.
+When the day's limit runs out, a full-screen notice covers Home; the PIN unlocks it or gives **30 more
+minutes today**. `kids_mode` false takes the row away and keeps the mode off.
+
+## Quran pill
+
+`quran_tile_package` (Quran Reader TV, `com.prayerhome.quran`, by default) adds a Quran pill at the start
+of the top bar. When Quran was the last app opened from Home, OK pauses or resumes its recitation with a
+media key without leaving Home; otherwise it opens the app. An empty value, or the app not installed,
+leaves the pill out.
 
 ## Languages
 

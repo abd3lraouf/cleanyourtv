@@ -3,6 +3,9 @@ package com.gathin.tvhome;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -45,6 +48,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -106,6 +110,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** Sent by QuickSettingsActivity: open Launcher settings from here so Home rebuilds when they close. */
     static final String ACTION_LAUNCHER_SETTINGS = "com.gathin.tvhome.action.LAUNCHER_SETTINGS";
     /** Sent by the "library" action word of app_keys: open the App library over Home (needs app_library). */
+    /** Kids mode's alarm: the day's time ran out while an app was in front, so Home comes back over it. */
+    static final String ACTION_KIDS_TIME_UP = "com.gathin.tvhome.action.KIDS_TIME_UP";
     static final String ACTION_APP_LIBRARY = "com.gathin.tvhome.action.APP_LIBRARY";
     /** The system input switcher, forwarded here by InputsRequestActivity while handle_view_inputs is on. */
     static final String ACTION_VIEW_INPUTS = "com.android.tv.action.VIEW_INPUTS";
@@ -145,6 +151,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private AppAdapter adapter;
     private RecyclerView grid;
     private FrameLayout root;
+    /** Kids mode (KidsMode; kids_mode in config.xml): read in onCreate, and turning it on or off recreates Home. */
+    private KidsMode kids;
+    private boolean kidsOn;
+    private View kidsTimeUp;
+    private BroadcastReceiver kidsScreenReceiver;
+    /** The Quran pill (QuranTile, quran_tile_package); quranPackage is empty when the pill is off. */
+    private TextView btnQuran;
+    private String quranPackage = "";
     private WallpaperPlayer wallpaperPlayer;
     private GlassView glass;
     private View ambient;
@@ -451,6 +465,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (festive) updateWifiLabel();
             sky.update();
             wallpaperPlayer.update();
+            if (kidsOn && resumed) kidsCheck();
+            updateQuranLabel();
             handler.postDelayed(this, MINUTE_MS);
         }
     };
@@ -705,7 +721,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             grid.setLayoutAnimation(new LayoutAnimationController(
                     AnimationUtils.loadAnimation(this, R.anim.tile_enter), 0.06f));
         }
+        kids = new KidsMode(this);
+        kidsOn = getResources().getBoolean(R.bool.kids_mode) && kids.on();
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        if (kidsOn) adapter.setKidsApps(kids.apps());
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         Order savedOrder = Order.load(Order.file(this));
@@ -945,8 +964,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
+        View btnKids = findViewById(R.id.btnKids);
+        setupQuranPill();
+        btnQuran.setOnKeyListener(pillKeys);
+        btnKids.setOnKeyListener(pillKeys);
+        if (kidsOn) applyKidsTopBar(btnSettings, btnKids);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings,
+                    btnQuran, btnKids));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -979,6 +1004,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 registerReceiver(wakeReceiver, new IntentFilter(Intent.ACTION_SCREEN_ON));
             }
         }
+        if (kidsOn) registerKidsScreenReceiver();
 
         // From the application, not this activity: on Android 12 a ConnectivityManager keeps the context it was
         // made with (its static sInstance, and the callback Messenger the system holds), so every recreate() left
@@ -1022,6 +1048,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean openInputsIfAsked(Intent intent) {
         if (intent == null || !ACTION_VIEW_INPUTS.equals(intent.getAction())) return false;
         setIntent(new Intent(Intent.ACTION_MAIN));
+        if (kidsOn) return true;
         View anchor = topMenu ? findViewById(R.id.btnSettings) : btnInputs;
         if (anchor.getVisibility() != View.VISIBLE) return true;
         if (anchor.isLaidOut()) {
@@ -1057,7 +1084,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean openLibraryIfAsked(Intent intent) {
         if (intent == null || !ACTION_APP_LIBRARY.equals(intent.getAction())) return false;
         setIntent(new Intent(Intent.ACTION_MAIN));
-        if (!appLibraryEnabled) return true;
+        if (!appLibraryEnabled || kidsOn) return true;
         getWindow().getDecorView().post(() -> {
             if (!isFinishing() && !isDestroyed()) onLibraryRequested();
         });
@@ -1067,6 +1094,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean openLauncherSettingsIfAsked(Intent intent) {
         if (intent == null || !ACTION_LAUNCHER_SETTINGS.equals(intent.getAction())) return false;
         setIntent(new Intent(Intent.ACTION_MAIN));
+        if (kidsOn) {
+            KidsMode.verify(this, kids, this::showKidsParentMenu);
+            return true;
+        }
         startActivityForResult(new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
         return true;
     }
@@ -1079,6 +1110,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (intent != null && ACTION_KIDS_TIME_UP.equals(intent.getAction())) {
+            setIntent(new Intent(Intent.ACTION_MAIN));
+            if (kidsOn && resumed) kidsCheck();   // otherwise onResume checks
+            return;
+        }
         if (openLauncherSettingsIfAsked(intent)) return;
         if (openLibraryIfAsked(intent)) return;
         if (openInputsIfAsked(intent)) return;
@@ -1115,6 +1151,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        if (kidsOn) kidsCheck();
+        updateQuranLabel();
         if (prayerPanel != null) {
             if (!prayerPanel.watching) {
                 try {
@@ -1343,6 +1381,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onPause() {
         super.onPause();
         resumed = false;
+        handler.removeCallbacks(quranCheck);
+        if (kidsOn) {
+            // Off to an app (or the screen went off): count up to now, and set the alarm for the rest of the day.
+            long now = System.currentTimeMillis();
+            kids.checkpoint(now);
+            PowerManager power = getSystemService(PowerManager.class);
+            if (power == null || power.isInteractive()) scheduleKidsAlarm(now);
+        }
         if (prayerPanel != null && prayerPanel.watching) {
             getContentResolver().unregisterContentObserver(prayerPanel.observer);
             prayerPanel.watching = false;
@@ -1433,6 +1479,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (gameDay != null) gameDay.shutdown();
         unregisterReceiver(packageReceiver);
         if (openOnStartOnWake) unregisterReceiver(wakeReceiver);
+        if (kidsScreenReceiver != null) unregisterReceiver(kidsScreenReceiver);
         wallpaperPlayer.close();
         ConnectivityManager cm = getApplicationContext().getSystemService(ConnectivityManager.class);   // as registered
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
@@ -1452,6 +1499,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean handleSettingsKey(KeyEvent event) {
         for (int code : settingsKeycodes) {
             if (event.getKeyCode() != code) continue;
+            if (kidsOn) {
+                // Kids mode: the remote's Settings key asks for the parent's PIN first.
+                if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                    KidsMode.verify(this, kids, this::showKidsParentMenu);
+                }
+                return true;
+            }
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
                 Intent settings = settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
                         : systemIntent(Settings.ACTION_SETTINGS);
@@ -1478,15 +1532,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (kidsTimeUp != null) {
+            // The time-up screen: only its PIN button (OK) and the volume keys; nothing reaches the tiles behind it.
+            int code = event.getKeyCode();
+            if (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER
+                    || code == KeyEvent.KEYCODE_NUMPAD_ENTER || code == KeyEvent.KEYCODE_VOLUME_UP
+                    || code == KeyEvent.KEYCODE_VOLUME_DOWN || code == KeyEvent.KEYCODE_VOLUME_MUTE) {
+                return super.dispatchKeyEvent(event);
+            }
+            return true;
+        }
         if (homeIgnoreChannelKeys && RemoteKeys.isChannelKey(event.getKeyCode())) return true;
         // Vendor keys (TCL Netflix button, 4062) never reach the key services, only the focused window, so their
         // "hold:" entries run here too or nowhere. Only while resumed: onPause releases Home's holds, and a DOWN
         // taken after that would arm one nothing releases.
-        if (resumed && event.getKeyCode() >= 1000 && RemoteKeys.handle(this, event, homeAppKeys.get(event.getKeyCode()),
+        if (resumed && !kidsOn && event.getKeyCode() >= 1000 && RemoteKeys.handle(this, event, homeAppKeys.get(event.getKeyCode()),
                 homeHoldAppKeys.get(event.getKeyCode()))) return true;
         if (handleSettingsKey(event)) return true;
-        if (holdOk(event)) return true;
-        if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
+        if (!kidsOn && holdOk(event)) return true;
+        if (tileMenuEnabled && !kidsOn && !reordering && openPopup == null && cardPrompt == null
                 && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {
             int position = focusedTilePosition();
             if (position >= 0 && position < adapter.appCount()
@@ -1825,6 +1889,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public void onLibraryRequested() {
+        if (kidsOn) return;
         if (appLibrary != null) appLibrary.close();
         if (openPopup != null) openPopup.dismiss();
         libraryFocusPending = false;
@@ -2638,6 +2703,223 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** top_bar_apps buttons, in bar order. */
     private final List<View> topAppButtons = new ArrayList<>();
 
+    // ---- Quran pill (quran_tile_package) ----
+
+    private void setupQuranPill() {
+        btnQuran = findViewById(R.id.btnQuran);
+        String pkg = getString(R.string.quran_tile_package).trim();
+        if (pkg.isEmpty() || QuranTile.launchIntent(this, pkg) == null) return;   // off, or not installed
+        quranPackage = pkg;
+        try {
+            Drawable logo = getPackageManager().getApplicationIcon(pkg);
+            int size = Math.round(22 * density);
+            logo.setBounds(0, 0, size, size);
+            btnQuran.setCompoundDrawablesRelative(logo, null, null, null);
+            btnQuran.setCompoundDrawableTintList(null);
+        } catch (PackageManager.NameNotFoundException ignored) {
+            // the label alone
+        }
+        btnQuran.setVisibility(View.VISIBLE);
+        btnQuran.setOnClickListener(v -> onQuranPressed());
+    }
+
+    /** After a play key: when nothing is playing (no paused session to resume), open the app instead. */
+    private final Runnable quranCheck = () -> {
+        if (QuranTile.musicActive(this)) updateQuranLabel();
+        else if (resumed) openQuran();
+    };
+
+    private void onQuranPressed() {
+        if (quranPackage.isEmpty()) return;
+        if (kidsOn && !kidsMayOpen(quranPackage)) return;
+        handler.removeCallbacks(quranCheck);
+        switch (QuranTile.action(QuranTile.wasLast(this, quranPackage), QuranTile.musicActive(this))) {
+            case QuranTile.PAUSE:
+                QuranTile.sendKey(this, KeyEvent.KEYCODE_MEDIA_PAUSE);
+                handler.postDelayed(this::updateQuranLabel, 800);
+                break;
+            case QuranTile.PLAY:
+                QuranTile.sendKey(this, KeyEvent.KEYCODE_MEDIA_PLAY);
+                handler.postDelayed(quranCheck, 2500);
+                break;
+            default:
+                openQuran();
+        }
+    }
+
+    private void openQuran() {
+        Intent i = QuranTile.launchIntent(this, quranPackage);
+        if (i == null) {
+            Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        QuranTile.opened(this, quranPackage);
+        open(i);
+    }
+
+    private void updateQuranLabel() {
+        if (btnQuran == null || quranPackage.isEmpty()) return;
+        boolean playing = QuranTile.wasLast(this, quranPackage) && QuranTile.musicActive(this);
+        btnQuran.setText(playing ? R.string.quran_stop : R.string.quran);
+    }
+
+    // ---- Kids mode ----
+
+    @Override
+    public boolean onTileLaunch(String pkg) {
+        if (kidsOn && !kidsMayOpen(pkg)) return false;
+        QuranTile.opened(this, pkg);
+        return true;
+    }
+
+    /** Kids mode: only the parent's apps, and only while there is time left today. */
+    private boolean kidsMayOpen(String pkg) {
+        if (pkg == null || !kids.apps().contains(pkg)) {
+            Toast.makeText(this, R.string.kids_blocked, Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        kids.checkpoint(now);
+        if (kids.timeUp(now)) {
+            showKidsTimeUp();
+            return false;
+        }
+        return true;
+    }
+
+    /** Kids mode keeps the clock and the lock pill; the rest of the top bar is the parent's. */
+    private void applyKidsTopBar(View btnSettings, View btnKids) {
+        showInputsPill = false;
+        for (View v : Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings)) {
+            v.setVisibility(View.GONE);
+        }
+        for (View v : topAppButtons) v.setVisibility(View.GONE);
+        if (!kids.apps().contains(quranPackage)) btnQuran.setVisibility(View.GONE);
+        btnKids.setVisibility(View.VISIBLE);
+        btnKids.setOnClickListener(v -> KidsMode.verify(this, kids, this::showKidsParentMenu));
+    }
+
+    /** After the PIN: turn kids mode off, add time for today, or open Launcher settings. */
+    private void showKidsParentMenu() {
+        long now = System.currentTimeMillis();
+        kids.checkpoint(now);
+        int limit = kids.limitMinutes();
+        List<CharSequence> items = new ArrayList<>();
+        List<Runnable> actions = new ArrayList<>();
+        items.add(getString(R.string.kids_turn_off));
+        actions.add(() -> {
+            kids.setOn(false, System.currentTimeMillis());
+            cancelKidsAlarm();
+            settingsRevision = settingsRevision();
+            recreate();
+        });
+        if (limit > 0) {
+            items.add(getString(R.string.kids_more_time));
+            actions.add(() -> {
+                kids.addBonus(KidsMode.BONUS_STEP_MS, System.currentTimeMillis());
+                kidsCheck();
+            });
+        }
+        items.add(getString(R.string.launcher_settings));
+        actions.add(() -> startActivityForResult(new Intent(this, LauncherSettingsActivity.class)
+                .putExtra(LauncherSettingsActivity.EXTRA_KIDS_UNLOCKED, true), LAUNCHER_SETTINGS_REQUEST));
+        String title = limit > 0
+                ? getString(R.string.kids_left, (int) Math.min(Integer.MAX_VALUE, kids.remaining(now) / 60_000L))
+                : getString(R.string.kids_mode);
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setItems(items.toArray(new CharSequence[0]), (d, which) -> actions.get(which).run())
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    /** Home is in front in kids mode: count the time so far, then the time-up screen or the alarm for the rest. */
+    private void kidsCheck() {
+        long now = System.currentTimeMillis();
+        kids.startSegment(now);
+        kids.checkpoint(now);
+        if (kids.timeUp(now)) {
+            showKidsTimeUp();
+            cancelKidsAlarm();
+        } else {
+            hideKidsTimeUp();
+            scheduleKidsAlarm(now);
+        }
+    }
+
+    private PendingIntent kidsAlarmIntent() {
+        Intent i = new Intent(this, MainActivity.class).setAction(ACTION_KIDS_TIME_UP)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return PendingIntent.getActivity(this, 7, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * The end of today's time, as an alarm that brings Home back over whatever app is in front (Home may start
+     * activities from the background). No service runs; the alarm is set again each time Home pauses or the screen
+     * comes on, and cancelled when the screen goes off.
+     */
+    private void scheduleKidsAlarm(long now) {
+        AlarmManager alarms = getSystemService(AlarmManager.class);
+        if (alarms == null) return;
+        long left = kids.remaining(now);
+        if (!kids.on() || left == Long.MAX_VALUE) {
+            alarms.cancel(kidsAlarmIntent());
+            return;
+        }
+        // A window, not an exact alarm: exact ones need SCHEDULE_EXACT_ALARM on Android 12+, and a minute late is fine.
+        long at = SystemClock.elapsedRealtime() + Math.max(left, 5_000L);
+        alarms.setWindow(AlarmManager.ELAPSED_REALTIME, at, 30_000L, kidsAlarmIntent());
+    }
+
+    private void cancelKidsAlarm() {
+        AlarmManager alarms = getSystemService(AlarmManager.class);
+        if (alarms != null) alarms.cancel(kidsAlarmIntent());
+    }
+
+    /** Screen off stops the count (a sleeping TV is not screen time), screen on starts it again. */
+    private void registerKidsScreenReceiver() {
+        kidsScreenReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                long now = System.currentTimeMillis();
+                if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                    kids.pauseSegment(now);
+                    cancelKidsAlarm();
+                } else {
+                    kids.startSegment(now);
+                    if (resumed) kidsCheck();
+                    else scheduleKidsAlarm(now);
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(kidsScreenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(kidsScreenReceiver, filter);
+        }
+    }
+
+    private void showKidsTimeUp() {
+        if (kidsTimeUp != null) return;
+        if (openPopup != null) openPopup.dismiss();
+        if (appLibrary != null) appLibrary.close();
+        kidsTimeUp = getLayoutInflater().inflate(R.layout.kids_time_up, root, false);
+        kidsTimeUp.setElevation(100 * density);
+        View unlock = kidsTimeUp.findViewById(R.id.kidsUnlock);
+        unlock.setOnClickListener(v -> KidsMode.verify(this, kids, this::showKidsParentMenu));
+        root.addView(kidsTimeUp);
+        unlock.requestFocus();
+    }
+
+    private void hideKidsTimeUp() {
+        if (kidsTimeUp == null) return;
+        root.removeView(kidsTimeUp);
+        kidsTimeUp = null;
+        grid.post(() -> focusTile(Math.max(0, Math.min(lastFocused, adapter.getItemCount() - 1))));
+    }
+
     /**
      * Puts each top_bar_apps app in the top bar as a round pill with the app's own logo, left of the network pill.
      * The logo keeps its colours: the pill style's tint, which turns the other icons white, is cleared.
@@ -3256,7 +3538,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** vpn_pill: the pill outlined in green with a lock while a VPN is up, outlined in red "VPN off" while it is not;
      *  solid with a white ring only while focused. */
     private void updateVpnPill(boolean vpn) {
-        int state = VpnBadge.pillState(vpn, vpnAppIntent() != null);
+        int state = kidsOn ? VpnBadge.PILL_HIDDEN : VpnBadge.pillState(vpn, vpnAppIntent() != null);
         if (state == VpnBadge.PILL_HIDDEN) {
             if (btnVpn.getVisibility() == View.GONE) return;
             boolean focused = btnVpn.hasFocus();
@@ -3298,7 +3580,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Hides the Inputs pill when it would have nothing to list: streaming boxes have no HDMI-in, AV or tuner. */
     private void updateInputsButton() {
-        if (!showInputsPill) {
+        if (!showInputsPill || kidsOn) {
             btnInputs.setVisibility(View.GONE);
             return;
         }
@@ -3397,6 +3679,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void open(Intent i) {
+        // The Quran pill's pause/play only applies while its app was the last one opened from Home.
+        String pkg = i.getComponent() != null ? i.getComponent().getPackageName() : i.getPackage();
+        if (pkg != null) QuranTile.opened(this, pkg);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(i);
@@ -3920,7 +4205,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public void onTileLongPress(int position, View card) {
-        if (reordering || openPopup != null) return;
+        if (reordering || openPopup != null || kidsOn) return;
         String key = adapter.keyAt(position);
         String pkg = adapter.packageAt(position);
         // Empty dock slots and the Default-home tile carry the launcher's own package: no menu for them.

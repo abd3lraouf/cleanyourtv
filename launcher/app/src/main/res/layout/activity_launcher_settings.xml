@@ -169,5 +169,11 @@
             style="@style/SettingsRow"
             android:layout_marginTop="18dp"
             android:text="@string/tv_settings" />
+
+        <TextView
+            android:id="@+id/kidsChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="28dp"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

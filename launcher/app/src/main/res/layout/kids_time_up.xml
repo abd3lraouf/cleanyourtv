@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kids mode: the day's time is used up. Covers Home until a parent enters the PIN. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="Overdraw"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F20B1016"
+    android:clickable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@string/font_medium"
+        android:text="@string/kids_time_up"
+        android:textColor="#FFFFFFFF"
+        android:textSize="48sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="@string/kids_time_up_hint"
+        android:textColor="#FFACB8C1"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/kidsUnlock"
+        style="@style/TopButton"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="36dp"
+        android:drawableStart="@drawable/ic_lock"
+        android:text="@string/kids_enter_pin" />
+</LinearLayout>

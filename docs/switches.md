@@ -41,6 +41,8 @@ rule sit on its wanted list until a screenshot arrives.
 | `volume_pauses_filter` | <img src="switches/volume_pauses_filter.jpg" width="320" alt="volume_pauses_filter on a TV"> |
 | `wifi_status_warnings` | <img src="switches/wifi_status_warnings.jpg" width="320" alt="wifi_status_warnings on a TV"> |
 | `top_bar_apps` | <img src="switches/top_bar_apps.jpg" width="320" alt="top_bar_apps on a TV"> |
+| `quran_tile_package` | <img src="switches/quran_tile_package.jpg" width="320" alt="quran_tile_package pill in the top bar on a TV"> |
+| `kids_mode` | <img src="switches/kids_mode.jpg" width="320" alt="kids_mode home with the lock pill on a TV"> |
 | `show_greeting` | <img src="switches/show_greeting.jpg" width="320" alt="show_greeting on a TV"> |
 | `header_white` | <img src="switches/header_white.jpg" width="320" alt="header_white on a TV"> |
 | `clock_wallpaper` | <img src="switches/clock_wallpaper.jpg" width="320" alt="clock_wallpaper on a TV"> |

@@ -17,7 +17,9 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** Remote-friendly settings owned by the launcher; system settings stay one row away. */
 public final class LauncherSettingsActivity extends Activity {
@@ -27,6 +29,11 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     static final String EXTRA_REORDER = "com.gathin.tvhome.extra.REORDER_FROM_SETTINGS";
+    /** Home already asked for the parent's PIN (kids mode is on), so the Kids mode row does not ask again. */
+    static final String EXTRA_KIDS_UNLOCKED = "com.gathin.tvhome.extra.KIDS_UNLOCKED";
+    private TextView kidsChoice;
+    private KidsMode kids;
+    private boolean kidsUnlocked;
     private SharedPreferences choices;
     private final TextView[] columnChoices = new TextView[4];
     private final TextView[] rowChoices = new TextView[4];
@@ -172,6 +179,27 @@ public final class LauncherSettingsActivity extends Activity {
                 open(new Intent(this, HomeSettingsActivity.class)));
         findViewById(R.id.tvSettingsChoice).setOnClickListener(v ->
                 open(SystemSettings.intent(this, Settings.ACTION_SETTINGS)));
+        kids = new KidsMode(this);
+        kidsUnlocked = getIntent().getBooleanExtra(EXTRA_KIDS_UNLOCKED, false);
+        kidsChoice = findViewById(R.id.kidsChoice);
+        if (getResources().getBoolean(R.bool.kids_mode)) {
+            kidsChoice.setVisibility(View.VISIBLE);
+            kidsChoice.setOnClickListener(v -> {
+                if (!kids.hasPin()) {
+                    KidsMode.askNewPin(this, kids, () -> {
+                        kidsUnlocked = true;
+                        showKidsMenu();
+                    });
+                } else if (kidsUnlocked) {
+                    showKidsMenu();
+                } else {
+                    KidsMode.verify(this, kids, () -> {
+                        kidsUnlocked = true;
+                        showKidsMenu();
+                    });
+                }
+            });
+        }
         refresh();
         if (config.launcherSettingsButton) reorderChoice.requestFocus();
         else columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
@@ -318,6 +346,110 @@ public final class LauncherSettingsActivity extends Activity {
                         : getString(R.string.wallpaper_theme_default)));
         openOnStartChoice.setText(getString(R.string.open_on_start_state, openOnStartLabel()));
         followThemeChoice.setSelected(!hasOnTvChoices());
+        kidsChoice.setText(getString(R.string.kids_mode_state, getString(kids.on() ? R.string.on : R.string.off)));
+    }
+
+    /** Kids mode, after the PIN: on/off, the allowed apps, the daily limit and the PIN. */
+    private void showKidsMenu() {
+        int limit = kids.limitMinutes();
+        CharSequence[] items = {
+                getString(kids.on() ? R.string.kids_turn_off : R.string.kids_turn_on),
+                getString(R.string.kids_apps, kids.apps().size()),
+                getString(R.string.kids_limit, limitLabel(limit)),
+                getString(R.string.kids_change_pin),
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.kids_mode)
+                .setItems(items, (d, which) -> {
+                    if (which == 0) toggleKids();
+                    else if (which == 1) pickKidsApps(this::showKidsMenu);
+                    else if (which == 2) pickKidsLimit();
+                    else KidsMode.askNewPin(this, kids, this::showKidsMenu);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void toggleKids() {
+        if (kids.on()) {
+            kids.setOn(false, System.currentTimeMillis());
+        } else if (kids.apps().isEmpty()) {
+            Toast.makeText(this, R.string.kids_no_apps, Toast.LENGTH_LONG).show();
+            pickKidsApps(() -> {
+                if (!kids.apps().isEmpty()) toggleKids();
+            });
+            return;
+        } else {
+            kids.setOn(true, System.currentTimeMillis());
+        }
+        changed();   // Home rebuilds for (or out of) kids mode when it comes back
+        finish();
+    }
+
+    private String limitLabel(int minutes) {
+        return minutes <= 0 ? getString(R.string.kids_no_limit) : getString(R.string.kids_minutes, minutes);
+    }
+
+    /** Every app on the TV's launcher list; the ticked ones are the only tiles in kids mode. */
+    private void pickKidsApps(Runnable then) {
+        PackageManager pm = getPackageManager();
+        Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        List<ResolveInfo> found = new ArrayList<>(pm.queryIntentActivities(query, 0));
+        query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+        found.addAll(pm.queryIntentActivities(query, 0));
+        List<String> packages = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        List<ResolveInfo> sorted = new ArrayList<>();
+        for (ResolveInfo ri : found) {
+            String pkg = ri.activityInfo.packageName;
+            if (pkg.equals(getPackageName()) || !seen.add(pkg)) continue;
+            sorted.add(ri);
+        }
+        java.text.Collator collator = java.text.Collator.getInstance();
+        Collections.sort(sorted, (a, b) -> collator.compare(String.valueOf(a.loadLabel(pm)), String.valueOf(b.loadLabel(pm))));
+        Set<String> allowed = new HashSet<>(kids.apps());
+        for (ResolveInfo ri : sorted) {
+            packages.add(ri.activityInfo.packageName);
+            labels.add(String.valueOf(ri.loadLabel(pm)));
+        }
+        boolean[] checked = new boolean[packages.size()];
+        for (int i = 0; i < checked.length; i++) checked[i] = allowed.contains(packages.get(i));
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.kids_apps, allowed.size()))
+                .setMultiChoiceItems(labels.toArray(new CharSequence[0]), checked, (d, which, on) -> {
+                    if (on) allowed.add(packages.get(which));
+                    else allowed.remove(packages.get(which));
+                })
+                .setPositiveButton(android.R.string.ok, (d, w) -> {
+                    allowed.retainAll(packages);
+                    kids.setApps(allowed);
+                    if (kids.on()) changed();
+                    refresh();
+                    then.run();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void pickKidsLimit() {
+        int current = kids.limitMinutes();
+        CharSequence[] labels = new CharSequence[KidsMode.LIMITS.length];
+        int selected = 0;
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = limitLabel(KidsMode.LIMITS[i]);
+            if (KidsMode.LIMITS[i] == current) selected = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.kids_mode)
+                .setSingleChoiceItems(labels, selected, (d, which) -> {
+                    kids.setLimitMinutes(KidsMode.LIMITS[which]);
+                    if (kids.on()) changed();
+                    d.dismiss();
+                    showKidsMenu();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private boolean hasOnTvChoices() {
