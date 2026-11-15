@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Camera Pop-up</string>
+    <string name="channel">Camera watch</string>
+    <string name="notification">Watching the recorder for motion</string>
+    <string name="about">When a camera on the recorder sees motion, its picture opens in a small window in the corner and closes by itself 30 seconds after the motion stops. The remote keeps working on whatever is on screen.</string>
+    <string name="nothing_yet">Nothing yet</string>
+    <string name="not_configured">Not set up</string>
+    <string name="connecting">Connecting…</string>
+    <string name="no_video">No video</string>
+    <string name="no_overlay">Android refused the pop-up window</string>
+    <string name="status">Recorder: %1$s\nLink: %2$s\nLast motion: %3$s</string>
+    <string name="popup_label">Camera %1$d</string>
+    <string name="popups_on">Pop-ups: on</string>
+    <string name="popups_off">Pop-ups: off</string>
+    <string name="cooldown">Quiet after: %1$s</string>
+    <string name="cooldown_none">none</string>
+    <string name="seconds">%1$d s</string>
+    <string name="minutes">%1$d min</string>
+    <string name="cameras">Cameras that may pop up</string>
+</resources>

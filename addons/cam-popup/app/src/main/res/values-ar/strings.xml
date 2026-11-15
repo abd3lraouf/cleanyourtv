@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">نافذة الكاميرات</string>
+    <string name="channel">مراقبة الكاميرات</string>
+    <string name="notification">يراقب المسجّل لرصد الحركة</string>
+    <string name="about">عندما ترصد كاميرا على المسجّل حركة، تظهر صورتها في نافذة صغيرة في الزاوية وتُغلق تلقائياً بعد ٣٠ ثانية من توقف الحركة. يبقى الريموت يتحكم بما على الشاشة.</string>
+    <string name="nothing_yet">لا شيء بعد</string>
+    <string name="not_configured">غير مُعدّ</string>
+    <string name="connecting">جارٍ الاتصال…</string>
+    <string name="no_video">لا يوجد فيديو</string>
+    <string name="no_overlay">رفض أندرويد إظهار النافذة</string>
+    <string name="status">المسجّل: %1$s\nالاتصال: %2$s\nآخر حركة: %3$s</string>
+    <string name="popup_label">كاميرا %1$d</string>
+    <string name="popups_on">النوافذ: مفعّلة</string>
+    <string name="popups_off">النوافذ: متوقفة</string>
+    <string name="cooldown">هدوء بعدها: %1$s</string>
+    <string name="cooldown_none">بلا</string>
+    <string name="seconds">%1$d ث</string>
+    <string name="minutes">%1$d د</string>
+    <string name="cameras">الكاميرات المسموح لها بالظهور</string>
+</resources>
