@@ -11,6 +11,8 @@
     <string name="no_overlay">رفض أندرويد إظهار النافذة</string>
     <string name="status">المسجّل: %1$s\nالاتصال: %2$s\nآخر حركة: %3$s</string>
     <string name="popup_label">كاميرا %1$d</string>
+    <string name="popup_full">ملء الشاشة</string>
+    <string name="popup_close">إغلاق</string>
     <string name="popups_on">النوافذ: مفعّلة</string>
     <string name="popups_off">النوافذ: متوقفة</string>
     <string name="cooldown">هدوء بعدها: %1$s</string>

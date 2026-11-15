@@ -82,7 +82,18 @@ public final class CamService extends Service {
         } else {
             startForeground(NOTIFICATION, n);
         }
-        popup = new Popup(this);
+        popup = new Popup(this, new Popup.Listener() {
+            @Override public void onDismiss() {
+                closeNow();
+            }
+
+            @Override public void onFullScreen(int channel) {
+                closeNow();
+                startActivity(new Intent(CamService.this, LiveActivity.class)
+                        .putExtra(LiveActivity.EXTRA_CHANNEL, channel)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+        });
         IntentFilter f = new IntentFilter(ACTION_TEST);
         String perm = android.Manifest.permission.WRITE_SECURE_SETTINGS;
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(test, f, perm, main, Context.RECEIVER_EXPORTED);

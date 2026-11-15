@@ -104,6 +104,7 @@ final class StreamView extends FrameLayout {
 
     private void start() {
         release();
+        if (url == null) return;   // stopped meanwhile: a late error or retry must not restart anything
         note.setText(R.string.connecting);
         note.setVisibility(VISIBLE);
         DefaultLoadControl load = new DefaultLoadControl.Builder()
@@ -116,14 +117,17 @@ final class StreamView extends FrameLayout {
         player.setVideoTextureView(video);
         final long started = SystemClock.elapsedRealtime();
         final String playing = url;
+        final ExoPlayer self = player;
         player.addListener(new Player.Listener() {
             @Override public void onRenderedFirstFrame() {
+                if (player != self) return;
                 Log.i(Settings.TAG, "video playing after " + (SystemClock.elapsedRealtime() - started) + " ms");
                 note.setVisibility(GONE);
                 retries = 0;
             }
 
             @Override public void onPlayerError(PlaybackException error) {
+                if (player != self) return;   // an event from a player already let go
                 Log.w(Settings.TAG, "video: " + error.getErrorCodeName() + " " + Settings.redact(playing));
                 release();
                 note.setText(R.string.no_video);

@@ -224,7 +224,8 @@ final class Onvif {
     /**
      * The motion notifications in a PullMessages response. A motion topic is any topic with "Motion" in it
      * (RuleEngine/CellMotionDetector/Motion with IsMotion, VideoSource/MotionAlarm with State, and the
-     * MotionRegionDetector variants); its on/off is the first Data item that reads true or false.
+     * MotionRegionDetector variants), plus the person detectors some recorders raise on their own
+     * (Uniview's HumanShapeDetect); its on/off is the first Data item that reads true or false.
      */
     static List<Event> motionEvents(String xml) {
         List<Event> out = new ArrayList<>();
@@ -232,7 +233,7 @@ final class Onvif {
         while (m.find()) {
             String msg = m.group(1);
             Matcher t = TOPIC.matcher(msg);
-            if (!t.find() || !t.group(1).toLowerCase(Locale.ROOT).contains("motion")) continue;
+            if (!t.find() || !isMotionTopic(t.group(1))) continue;
             Matcher d = SECTION_DATA.matcher(msg);
             if (!d.find()) continue;
             Boolean active = null;
@@ -264,6 +265,11 @@ final class Onvif {
             out.add(new Event(source, active, initial));
         }
         return out;
+    }
+
+    static boolean isMotionTopic(String topic) {
+        String t = topic.toLowerCase(Locale.ROOT);
+        return t.contains("motion") || t.contains("humanshape") || t.contains("humandetect");
     }
 
     static String xml(String s) {

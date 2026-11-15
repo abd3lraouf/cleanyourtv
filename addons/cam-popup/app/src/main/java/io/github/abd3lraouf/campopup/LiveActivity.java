@@ -33,7 +33,11 @@ public final class LiveActivity extends Activity {
     private LinearLayout grid;
     private StreamView full;
     private TextView hint;
+    /** Open straight on this camera full screen (from the pop-up's Full screen button). */
+    static final String EXTRA_CHANNEL = "channel";
+
     private int fullIndex = -1;
+    private int wantChannel;
     private int focused;
 
     @Override protected void onCreate(Bundle state) {
@@ -43,6 +47,13 @@ public final class LiveActivity extends Activity {
         root.setBackgroundColor(Color.BLACK);
         setContentView(root);
         CamService.start(this);
+        wantChannel = getIntent().getIntExtra(EXTRA_CHANNEL, 0);
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        wantChannel = intent.getIntExtra(EXTRA_CHANNEL, 0);
     }
 
     @Override protected void onStart() {
@@ -51,6 +62,11 @@ public final class LiveActivity extends Activity {
         settings = Settings.load(this);
         channels.clear();
         channels.addAll(settings.view);
+        if (wantChannel > 0) {   // the pop-up asked for this camera; show it even if it is not in the grid
+            if (!channels.contains(wantChannel)) channels.add(wantChannel);
+            fullIndex = channels.indexOf(wantChannel);
+            wantChannel = 0;
+        }
         build();
         if (fullIndex >= 0 && fullIndex < channels.size()) showFull(fullIndex);
         else showGrid();

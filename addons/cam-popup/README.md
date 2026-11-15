@@ -1,17 +1,19 @@
 # Camera Pop-up
 
 When a camera on the home recorder (DVR/NVR) sees motion, its picture opens in a small window in the bottom
-corner of the TV, over whatever is playing, and closes by itself 30 seconds after the motion stops. The window
-never takes focus: the remote keeps driving the app on screen. Its Home tile, **Cameras**, opens every camera
+corner of the TV, over whatever is playing, and closes by itself 30 seconds after the motion stops. While it is
+up it takes the remote: **Close** is lit first, so OK or Back dismisses it, and right moves to **Full screen**,
+which opens that camera in the live view. Play/pause and the other media keys still reach the app underneath,
+and volume is untouched. A dismissed camera stays quiet for its cooldown. Its Home tile, **Cameras**, opens every camera
 live, full screen.
 
 - **Motion:** ONVIF events. The add-on opens one pull-point subscription (`CreatePullPointSubscription`) on
   `http://<recorder>/onvif/event`, then long-polls `PullMessages` (20 s), so an idle recorder costs one small
   request every 20 s. Any topic with `Motion` in it counts (`RuleEngine/CellMotionDetector/Motion`,
-  `VideoSource/MotionAlarm`); the channel comes from `GetProfiles`. Login is a WS-Security digest stamped with
+  `VideoSource/MotionAlarm`), and so do person detectors (`HumanShapeDetect`); the channel comes from `GetProfiles`. Login is a WS-Security digest stamped with
   the recorder's own clock. A refused login waits 10 minutes, so a wrong password cannot lock the account.
 - **Video:** the channel's RTSP sub-stream, `rtsp://<recorder>:554/unicast/c<N>/s1/live` (Uniview XVR/NVR),
-  through Media3's RTSP client over TCP, muted, in a 480x270 overlay (a quarter of the screen width).
+  through Media3's RTSP client over TCP, muted, in a card a third of the screen wide (640x360 on 1080p).
 - **Live view:** the cameras listed in `view=` (1-4 by default) in a grid of sub-streams (one camera fills the
   screen, two sit side by side, up to four make 2x2). OK opens the focused camera full screen on its main stream
   (`s0`), left/right steps through the others, Back returns to the grid, Menu opens the settings. Streams retry
@@ -22,6 +24,11 @@ live, full screen.
 - **Quiet:** pop-ups on/off, a cooldown per camera after its window closes (none to 30 min, 2 min by default),
   and which cameras may pop up, all on the app's screen. Motion on a second camera switches the window only when
   the first one has gone quiet.
+
+The recorder only sends events for cameras whose own motion detection is on. Uniview recorders ship with it
+off: turn it on per camera under Setup > Event > Motion Detection (the whole picture as the area, sensitivity
+around 80 of 100 for a hallway). Higher sensitivity catches smaller movement and more false alarms (light
+changes, insects at night).
 
 Tried on a Sony BRAVIA (Android TV 11) with a Uniview XVR301-08Q3.
 

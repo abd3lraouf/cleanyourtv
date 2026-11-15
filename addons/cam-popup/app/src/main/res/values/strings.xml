@@ -11,6 +11,8 @@
     <string name="no_overlay">Android refused the pop-up window</string>
     <string name="status">Recorder: %1$s\nLink: %2$s\nLast motion: %3$s</string>
     <string name="popup_label">Camera %1$d</string>
+    <string name="popup_full">Full screen</string>
+    <string name="popup_close">Close</string>
     <string name="popups_on">Pop-ups: on</string>
     <string name="popups_off">Pop-ups: off</string>
     <string name="cooldown">Quiet after: %1$s</string>

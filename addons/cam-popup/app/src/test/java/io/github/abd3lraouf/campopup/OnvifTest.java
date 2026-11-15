@@ -85,6 +85,12 @@ public class OnvifTest {
                 + "</tt:Message></wsnt:Message></wsnt:NotificationMessage>";
     }
 
+    @Test public void personDetectionCountsAsMotion() {
+        assertTrue(Onvif.isMotionTopic("tns1:RuleEngine/CellMotionDetector/Motion"));
+        assertTrue(Onvif.isMotionTopic("tns1:RuleEngine/HumanShapeDetect"));
+        assertFalse(Onvif.isMotionTopic("tns1:VideoSource/SignalLoss"));
+    }
+
     @Test public void motionEvents() {
         String xml = "<tev:PullMessagesResponse>"
                 + message("tns1:RuleEngine/CellMotionDetector/Motion", "Changed", "VideoSourceConfigurationToken", "vsc2", "IsMotion", "true")
